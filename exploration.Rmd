@@ -1,0 +1,81 @@
+---
+title: "Analysis of the effect of school zones on house prices"
+output: html_notebook
+---
+
+This analysis takes 
+
+```{r}
+library(tidyverse)
+library(sf)
+library(ggspatial)
+```
+
+
+```{r}
+houses <- read_csv("nsw_property_data.csv")
+```
+
+```{r Load school zones}
+catchments <- st_read("catchments/catchments_secondary.shp")
+```
+
+```{r Get GPS coords from addresses}
+queries <- houses %>%
+  slice_sample(., n = nrow(.)) |>
+  head(1000) |>
+  mutate(full_add = paste(address, post_code)) |>
+  select(full_add) |> pull()
+
+start_time <- Sys.time()
+house_gps <- tmaptools::geocode_OSM(queries, geometry = "point", keep.unfound = T, details = F)
+Sys.time() - start_time
+```
+
+```{r}
+valid_catch <- catchments |> filter(CATCH_TYPE == "HIGH_COED") |> st_make_valid()
+
+# buffered_boundaries <- st_buffer(valid_catch, dist = -100) %>%
+#   st_difference(valid_catch, .)
+house_gps1 <- st_as_sf(house_gps |> na.omit(), coords = c("lon", "lat"), crs = 4326)
+house_gps1 <- st_transform(house_gps1, st_crs(valid_catch))
+# points_within_buffer <- st_join(house_gps1, st_as_sf(buffered_boundaries), join = st_intersects)
+st_is_within_distance(house_gps1, st_boundary(valid_catch), dist=50) |> map_lgl(~length(.x) == 2) |> sum()
+st_is_within_distance(house_gps1, st_boundary(valid_catch), dist=600) |> map_lgl(~length(.x) == 2) |> sum()
+
+```
+
+```{r}
+ggplot() +
+  # Add buffered boundaries (the zones)
+  geom_sf(data = st_boundary(valid_catch), fill = "lightblue", color = "darkblue", alpha = 0.4) +
+  
+  # Add house GPS points
+  geom_sf(data = house_gps1, color = "red", size = 2) +
+  
+  # Add scale bar (optional)
+  annotation_scale(location = "bl", width_hint = 0.5) +
+  
+  # Add north arrow (optional)
+  annotation_north_arrow(location = "bl", which_north = "true", 
+                         pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"),
+                         style = north_arrow_fancy_orienteering) +
+  
+  # Titles and labels
+  labs(title = "Zones and House GPS Points",
+       caption = "Blue areas represent buffered zones, and red points represent houses.") +
+  
+  # Coordinate settings
+  coord_sf()
+```
+
+```{r}
+writeLines(paste0(houses$address,", NSW ", houses$post_code), "addresses.txt")
+
+library(reticulate)
+use_python("/Users/patrickrehill/anaconda3/bin/python3", required = TRUE)
+py_run_file("parse_addresses.py")
+```
+
+
+
