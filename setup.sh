@@ -1,8 +1,8 @@
 # Credit for this to Peter Johnson - https://geocode.earth/blog/2021/exploring-gnaf-with-sqlite/
 # cd G-NAF
-#
+
 # rm -f gnaf.db
-#
+# #
 # sqlite3 gnaf.db < Extras/GNAF_TableCreation_Scripts/create_tables_ansi.sql
 # sqlite3 gnaf.db <<(sed 's/ OR REPLACE//g' Extras/GNAF_View_Scripts/address_view.sql)
 
@@ -58,28 +58,6 @@ exec >/dev/tty
 # Create database
 
 sqlite3 gnaf.db < gnaf-import.sql
-
-
-# Index database
-
-sqlite3 gnaf.db <<SQL > gnaf-indices.sql
-
-  SELECT printf(
-    'CREATE INDEX IF NOT EXISTS %s ON %s (%s);',
-    printf('%s_%s', LOWER(t.name), LOWER(c.name)),
-    t.name, c.name
-  )
-  FROM sqlite_master t
-  LEFT OUTER JOIN pragma_table_info(t.name) c
-  WHERE t.type = 'table'
-  AND (
-    c.name LIKE '%\_pid' ESCAPE '\' OR
-    c.name LIKE '%\_code' ESCAPE '\' OR
-    c.name == 'code'
-  );
-SQL
-
-
 
 # Overwrite original
 

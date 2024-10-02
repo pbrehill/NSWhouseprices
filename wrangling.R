@@ -1,26 +1,14 @@
----
-title: "Analysis of the effect of school zones on house prices"
-output: html_notebook
----
 
-This analysis takes 
-
-```{r}
 library(tidyverse)
 library(sf)
 library(ggspatial)
-```
+library(RSQLite)
 
 
-```{r}
 houses <- read_csv("nsw_property_data.csv")
-```
 
-```{r Load school zones}
 catchments <- st_read("catchments/catchments_secondary.shp")
-```
 
-```{r}
 # writeLines(paste0(houses$address[1:10000],", NSW ", houses$post_code), "addresses.txt")
 
 source("parse_address.R")
@@ -29,10 +17,10 @@ source("parse_address.R")
 # Sys.time() - time
 
 time <- Sys.time()
-parsed_ads <- parsed_addresses(houses$address[1:100000])
+parsed_ads <- parsed_addresses(houses$address[1:1000])
 Sys.time() - time
 
-parsed_houses <- bind_cols(parsed_ads, houses[1:100000,])
+parsed_houses <- bind_cols(parsed_ads, houses[1:1000,])
 
 # Rename table in line with the database and add
 parsed_houses <- parsed_houses |>
@@ -42,11 +30,6 @@ parsed_houses <- parsed_houses |>
     POSTCODE = post_code
   ) |>
   mutate(lot_id = row_number())
-```
-
-
-```{r}
-library(RSQLite)
 
 setwd("G-NAF")
 
@@ -99,13 +82,13 @@ njoin <- "WITH ranked_addresses AS (
     FROM ADDRESS_TABLE av
 )
 SELECT
-    p.POSTCODE, 
-    p.STREET_NAME, 
-    p.NUMBER_FIRST, 
-    p.street_type, 
-    p.lot_id, 
-    p.area, 
-    p.purchase_price, 
+    p.POSTCODE,
+    p.STREET_NAME,
+    p.NUMBER_FIRST,
+    p.street_type,
+    p.lot_id,
+    p.area,
+    p.purchase_price,
     p.settlement_date,
     av.*
 FROM
@@ -131,7 +114,6 @@ write.csv(result, "linked_prices.csv", row.names = FALSE)
 # Close the connection
 dbDisconnect(my_conn)
 
-```
 
 
 
