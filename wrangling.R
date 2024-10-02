@@ -17,10 +17,10 @@ source("parse_address.R")
 # Sys.time() - time
 
 time <- Sys.time()
-parsed_ads <- parsed_addresses(houses$address[1:1000])
+parsed_ads <- parsed_addresses(houses$address)
 Sys.time() - time
 
-parsed_houses <- bind_cols(parsed_ads, houses[1:1000,])
+parsed_houses <- bind_cols(parsed_ads, houses)
 
 # Rename table in line with the database and add
 parsed_houses <- parsed_houses |>
