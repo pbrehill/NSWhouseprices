@@ -42,7 +42,7 @@ dbWriteTable(my_conn, "prices", parsed_houses, row.names = FALSE, overwrite = TR
 
 # Put address data into one table
 
-dbExecute(my_conn, "DROP TABLE ADDRESS_TABLE")
+dbExecute(my_conn, "DROP TABLE IF EXISTS ADDRESS_TABLE")
 
 dbExecute(my_conn, "CREATE TABLE IF NOT EXISTS ADDRESS_TABLE AS
   SELECT POSTCODE, STREET_NAME, NUMBER_FIRST, STREET_TYPE_CODE, LATITUDE, LONGITUDE FROM ADDRESS_VIEW
